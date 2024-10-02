@@ -9,6 +9,9 @@ class Settings(BaseSettings):
 
 
     REF_LINK: str = "https://t.me/notpixel/app?startapp=f6624523270"
+    CHANNEL_ONE: str = "airdrop_hiddengems"
+    CHANNEL_TWO: str = "airdrop_hiddengems"
+    CHANNEL_THREE: str = "airdrop_hiddengems"
     AUTO_UPGRADE_PAINT_REWARD: bool = True
     AUTO_UPGRADE_RECHARGE_SPEED:bool = True
     AUTO_UPGRADE_RECHARGE_ENERGY:bool = True

@@ -95,21 +95,21 @@ async def process() -> None:
         await register_sessions()
     elif action == 1:
         ans = None
-        while True:
-            ans = input("> Do you want to run the bot with multi-thread? (y/n) ")
-            if ans not in ["y", "n"]:
-                logger.warning("Answer must be y or n")
-            else:
-                break
+        # while True:
+        #     ans = input("> Do you want to run the bot with multi-thread? (y/n) ")
+        #     if ans not in ["y", "n"]:
+        #         logger.warning("Answer must be y or n")
+        #     else:
+        #         break
 
-        if ans == "y":
-            tg_clients = await get_tg_clients()
+        # if ans == "y":
+            # tg_clients = await get_tg_clients()
 
-            await run_tasks(tg_clients=tg_clients)
-        else:
-            tg_clients = await get_tg_clients()
-            proxies = get_proxies()
-            await run_tapper1(tg_clients=tg_clients, proxies=proxies)
+            # await run_tasks(tg_clients=tg_clients)
+        # else:
+        tg_clients = await get_tg_clients()
+        proxies = get_proxies()
+        await run_tapper1(tg_clients=tg_clients, proxies=proxies)
     elif action == 3:
         ans = None
         while True:

@@ -158,6 +158,55 @@ class Tapper:
         else:
             logger.warning(f"{self.session_name} | Faled to repaint: {response.json()}")
 
+    async def join_channel(self, session: requests.Session):
+        try:
+            logger.info(f"{self.session_name} | Joining TG channel...")
+            if not self.tg_client.is_connected:
+                try:
+                    await self.tg_client.connect()
+                except (Unauthorized, UserDeactivated, AuthKeyUnregistered):
+                    raise InvalidSession(self.session_name)
+            try:
+                res = await self.tg_client.join_chat(settings.CHANNEL_ONE)
+                logger.success(f"{self.session_name} | <green>Joined channel {settings.CHANNEL_ONE} successfully</green>")
+            except Exception as e:
+                logger.error(f"{self.session_name} | <red>Join TG channel failed - Error: {e}</red>")
+
+        except Exception as error:
+            logger.error(f"<light-yellow>{self.session_name}</light-yellow> | Unknown error during Authorization: "
+                f"{error}")
+            await asyncio.sleep(delay=3)
+
+        try:
+            logger.info(f"{self.session_name} | Joining TG channel...")
+            try:
+                res = await self.tg_client.join_chat(settings.CHANNEL_TWO)
+                logger.success(f"{self.session_name} | <green>Joined channel {settings.CHANNEL_TWO} successfully</green>")
+                
+            except Exception as e:
+                logger.error(f"{self.session_name} | <red>Join TG channel {settings.CHANNEL_TWO} failed - Error: {e}</red>")
+
+        except Exception as error:
+            logger.error(f"<light-yellow>{self.session_name}</light-yellow> | Unknown error during Authorization: "
+                f"{error}")
+            await asyncio.sleep(delay=3)
+        try:
+            logger.info(f"{self.session_name} | Joining TG channel...")
+            if not self.tg_client.is_connected:
+                try:
+                    await self.tg_client.connect()
+                except (Unauthorized, UserDeactivated, AuthKeyUnregistered):
+                    raise InvalidSession(self.session_name)
+            try:
+                res = await self.tg_client.join_chat(settings.CHANNEL_THREE)
+                logger.success(f"{self.session_name} | <green>Joined channel {settings.CHANNEL_THREE} successfully</green>")
+            except Exception as e:
+                logger.error(f"{self.session_name} | <red>Join TG channel {settings.CHANNEL_THREE} failed - Error: {e}</red>")
+
+        except Exception as error:
+            logger.error(f"<light-yellow>{self.session_name}</light-yellow> | Unknown error during Authorization: "
+                f"{error}")
+            await asyncio.sleep(delay=3)
 
     def auto_task(self, session: cloudscraper.CloudScraper):
         pass
@@ -227,6 +276,7 @@ class Tapper:
                             self.claimpx(session)
                             await asyncio.sleep(random.uniform(2,5))
                         if settings.AUTO_TASK:
+                            await self.join_channel(session)
                             res = session.get("https://notpx.app/api/v1/mining/task/check/x?name=notpixel", headers=headers, verify=False)
                             if res.status_code == 200 and res.json()['x:notpixel'] and self.checked[1] is False:
                                 self.checked[1] = True
