@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     CHANNEL_ONE: str = "airdrop_hiddengems"
     CHANNEL_TWO: str = "airdrop_hiddengems"
     CHANNEL_THREE: str = "airdrop_hiddengems"
+    X3POINTS: bool = True
     AUTO_UPGRADE_PAINT_REWARD: bool = True
     AUTO_UPGRADE_RECHARGE_SPEED:bool = True
     AUTO_UPGRADE_RECHARGE_ENERGY:bool = True

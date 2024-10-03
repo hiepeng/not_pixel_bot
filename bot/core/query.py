@@ -21,6 +21,12 @@ import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+def calc_id(x: int, y: int, x1: int, y1: int):
+    px_id = randint(min(y, y1), max(y1, y))*1000
+    px_id += randint(min(x, x1), max(x1, x))+1
+    # print(px_id)
+    return px_id
+
 class Tapper:
     def __init__(self, query: str, session_name, multi_thread):
         self.query = query
@@ -34,76 +40,9 @@ class Tapper:
         self.balace = 0
         self.maxtime = 0
         self.fromstart = 0
+        self.balance = 0
         self.checked = [False] * 5
         self.multi_thread = multi_thread
-
-    # async def get_tg_web_data(self, proxy: str | None) -> str:
-    #     try:
-    #         if settings.REF_LINK == "":
-    #             ref_param = "f6624523270"
-    #         else:
-    #             ref_param = settings.REF_LINK.split("=")[1]
-    #     except:
-    #         logger.error(f"{self.session_name} | Ref link invaild please check again !")
-    #         sys.exit()
-    #     if proxy:
-    #         proxy = Proxy.from_str(proxy)
-    #         proxy_dict = dict(
-    #             scheme=proxy.protocol,
-    #             hostname=proxy.host,
-    #             port=proxy.port,
-    #             username=proxy.login,
-    #             password=proxy.password
-    #         )
-    #     else:
-    #         proxy_dict = None
-    #
-    #     self.tg_client.proxy = proxy_dict
-    #
-    #     try:
-    #         if not self.tg_client.is_connected:
-    #             try:
-    #                 await self.tg_client.connect()
-    #             except (Unauthorized, UserDeactivated, AuthKeyUnregistered):
-    #                 raise InvalidSession(self.session_name)
-    #
-    #         while True:
-    #             try:
-    #                 peer = await self.tg_client.resolve_peer('notpixel')
-    #                 break
-    #             except FloodWait as fl:
-    #                 fls = fl.value
-    #
-    #                 logger.warning(f"<light-yellow>{self.session_name}</light-yellow> | FloodWait {fl}")
-    #                 logger.info(f"<light-yellow>{self.session_name}</light-yellow> | Sleep {fls}s")
-    #
-    #                 await asyncio.sleep(fls + 3)
-    #
-    #         web_view = await self.tg_client.invoke(RequestAppWebView(
-    #             peer=peer,
-    #             app=InputBotAppShortName(bot_id=peer, short_name="app"),
-    #             platform='android',
-    #             write_allowed=True,
-    #             start_param=ref_param
-    #         ))
-    #
-    #         auth_url = web_view.url
-    #         # print(auth_url)
-    #         tg_web_data = unquote(string=auth_url.split('tgWebAppData=')[1].split('&tgWebAppVersion')[0])
-    #         # print(tg_web_data)
-    #
-    #         if self.tg_client.is_connected:
-    #             await self.tg_client.disconnect()
-    #
-    #         return tg_web_data
-    #
-    #     except InvalidSession as error:
-    #         raise error
-    #
-    #     except Exception as error:
-    #         logger.error(f"<light-yellow>{self.session_name}</light-yellow> | Unknown error during Authorization: "
-    #                      f"{error}")
-    #         await asyncio.sleep(delay=3)
 
     async def check_proxy(self, http_client: aiohttp.ClientSession, proxy: Proxy):
         try:
@@ -142,16 +81,70 @@ class Tapper:
     def generate_random_pos(self):
         return randint(1, 1000000)
 
+    def get_cor(self, session: requests.Session):
+        res = session.get("https://raw.githubusercontent.com/vanhbakaa/notpixel-3x-points/refs/heads/main/data4.json")
+        if res.status_code == 200:
+            cor = res.json()
+            paint = random.choice(cor['data'])
+            color = paint['color']
+            random_cor = random.choice(paint['cordinates'])
+            # print(f"{color}: {random_cor}")
+            px_id = calc_id(random_cor['start'][0], random_cor['start'][1], random_cor['end'][0], random_cor['end'][1])
+            return [color, px_id]
+
     def repaint(self, session: requests.Session, chance_left):
-        payload = {
-            "newColor": str(self.generate_random_color()),
-            "pixelId": int(self.generate_random_pos())
-        }
+        #  print("starting to paint")
+        if settings.X3POINTS:
+            data = self.get_cor(session)
+            payload = {
+                "newColor": data[0],
+                "pixelId": data[1]
+            }
+        else:
+            data = [str(self.generate_random_color()), int(self.generate_random_pos())]
+            payload = {
+                "newColor": data[0],
+                "pixelId": data[1]
+            }
         response = session.post("https://notpx.app/api/v1/repaint/start", headers=headers, json=payload, verify=False)
         if response.status_code == 200:
-            logger.success(f"{self.session_name} | <green>Painted successfully balace: <light-blue>{response.json()['balance']}</light-blue> | Repaint left: <yellow>{chance_left}</yellow></green>")
+            if settings.X3POINTS:
+                logger.success(
+                    f"{self.session_name} | <green>Painted <cyan>{data[1]}</cyan> successfully new color: <cyan>{data[0]}</cyan> | Earned <light-blue>{int(response.json()['balance']) - self.balance}</light-blue> | Balace: <light-blue>{response.json()['balance']}</light-blue> | Repaint left: <yellow>{chance_left}</yellow></green>")
+                self.balance = int(response.json()['balance'])
+            else:
+                logger.success(
+                    f"{self.session_name} | <green>Painted <cyan>{data[1]}</cyan> successfully new color: <cyan>{data[0]}</cyan> | Earned <light-blue>{int(response.json()['balance']) - self.balance}</light-blue> | Balace: <light-blue>{response.json()['balance']}</light-blue> | Repaint left: <yellow>{chance_left}</yellow></green>")
+                self.balance = int(response.json()['balance'])
         else:
-            logger.warning(f"{self.session_name} | Faled to repaint: {response.json()}")
+            print(response.text)
+            logger.warning(f"{self.session_name} | Faled to repaint: {response.status_code}")
+
+    def repaintV2(self, session: requests.Session, chance_left, i, data):
+        if i % 2 == 0:
+            payload = {
+                "newColor": data[0],
+                "pixelId": data[1]
+            }
+        else:
+            data1 = [str(self.generate_random_color()), int(self.generate_random_pos())]
+            payload = {
+                "newColor": data1[0],
+                "pixelId": data[1]
+            }
+        response = session.post("https://notpx.app/api/v1/repaint/start", headers=headers, json=payload, verify=False)
+        if response.status_code == 200:
+            if i % 2 == 0:
+                logger.success(
+                    f"{self.session_name} | <green>Painted <cyan>{data[1]}</cyan> successfully new color: <cyan>{data[0]}</cyan> | Earned <light-blue>{int(response.json()['balance']) - self.balance}</light-blue> | Balace: <light-blue>{response.json()['balance']}</light-blue> | Repaint left: <yellow>{chance_left}</yellow></green>")
+                self.balance = int(response.json()['balance'])
+            else:
+                logger.success(
+                    f"{self.session_name} | <green>Painted <cyan>{data[1]}</cyan> successfully new color: <cyan>{data1[0]}</cyan> | Earned <light-blue>{int(response.json()['balance']) - self.balance}</light-blue> | Balace: <light-blue>{response.json()['balance']}</light-blue> | Repaint left: <yellow>{chance_left}</yellow></green>")
+                self.balance = int(response.json()['balance'])
+        else:
+            print(response.text)
+            logger.warning(f"{self.session_name} | Faled to repaint: {response.status_code}")
 
 
     def auto_task(self, session: cloudscraper.CloudScraper):
@@ -209,6 +202,7 @@ class Tapper:
                     headers['Authorization'] = f"initData {self.query}"
                     access_token_created_time = time()
                     token_live_time = randint(1000, 1500)
+                    
 
                 if self.login(session):
                     user = self.get_user_data(session)
@@ -216,35 +210,47 @@ class Tapper:
                     if user:
                         self.maxtime = user['maxMiningTime']
                         self.fromstart = user['fromStart']
+                        self.balance = int(user['userBalance'])
+                        
+                        if user['charges'] > 0:
+                            # print("starting to paint 1")
+                            total_chance = int(user['charges'])
+                            i = 0
+                            data = self.get_cor(session)
+                            while total_chance > 0:
+                                total_chance -= 1
+                                i += 1
+                                if settings.X3POINTS:
+                                    self.repaintV2(session, total_chance, i, data)
+                                else:
+                                    self.repaint(session, total_chance)
+                                sleep_ = random.uniform(1, 2)
+                                logger.info(f"{self.session_name} | Sleep <cyan>{sleep_}</cyan> before continue...")
+                                await asyncio.sleep(sleep_)
+                                
                         logger.info(
                             f"{self.session_name} | Pixel Balance: <light-blue>{int(user['userBalance'])}</light-blue> | Pixel available to paint: <cyan>{user['charges']}</cyan>")
-
-                        if self.fromstart >= self.maxtime / 2:
+                        r = random.uniform(2, 4)
+                        if float(self.fromstart) >= self.maxtime / r:
                             self.claimpx(session)
                             await asyncio.sleep(random.uniform(2, 5))
                         if settings.AUTO_TASK:
                             res = session.get("https://notpx.app/api/v1/mining/task/check/x?name=notpixel",
-                                              headers=headers)
+                                              headers=headers, verify=False)
                             if res.status_code == 200 and res.json()['x:notpixel'] and self.checked[1] is False:
                                 self.checked[1] = True
                                 logger.success("<green>Task Not pixel on x completed!</green>")
                             res = session.get("https://notpx.app/api/v1/mining/task/check/x?name=notcoin",
-                                              headers=headers)
+                                              headers=headers, verify=False)
                             if res.status_code == 200 and res.json()['x:notcoin'] and self.checked[2] is False:
                                 self.checked[2] = True
                                 logger.success("<green>Task Not coin on x completed!</green>")
                             res = session.get("https://notpx.app/api/v1/mining/task/check/paint20pixels",
-                                              headers=headers)
+                                              headers=headers, verify=False)
                             if res.status_code == 200 and res.json()['paint20pixels'] and self.checked[3] is False:
                                 self.checked[3] = True
                                 logger.success("<green>Task paint 20 pixels completed!</green>")
-                        if user['charges'] > 0:
-                            total_chance = int(user['charges'])
-                            while total_chance > 0:
-                                total_chance -= 1
-                                self.repaint(session, total_chance)
-                                sleep_ = random.uniform(2, 5)
-                                logger.info(f"{self.session_name} | Sleep <cyan>{sleep_}</cyan> before continue...")
+
 
                         if settings.AUTO_UPGRADE_PAINT_REWARD:
                             await self.auto_upgrade_paint(session)
@@ -281,7 +287,7 @@ async def run_query_tapper(query: str, name: str, proxy: str | None):
         sleep_ = randint(1, 15)
         logger.info(f" start after {sleep_}s")
         # await asyncio.sleep(sleep_)
-        await Tapper(query=query, session_name=name).run(proxy=proxy)
+        await Tapper(query=query, session_name=name, multi_thread=True).run(proxy=proxy)
     except InvalidSession:
         logger.error(f"Invalid Query: {query}")
 
