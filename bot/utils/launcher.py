@@ -4,7 +4,7 @@ import asyncio
 import argparse
 from itertools import cycle
 
-from pyrogram import Client
+from pyrogram import Client, errors
 from better_proxy import Proxy
 
 from bot.config import settings
@@ -75,6 +75,11 @@ async def process() -> None:
 
     logger.info(f"Detected {len(get_session_names())} sessions | {len(get_proxies())} proxies")
 
+    print(settings.JOIN_CHANNEL, "settings.JOIN_CHANNEL")
+    if settings.JOIN_CHANNEL:
+        tg_clients = await get_tg_clients()
+        await join_channels(tg_clients)
+    
     action = parser.parse_args().action
 
     if not action:
@@ -161,3 +166,32 @@ async def run_tasks(tg_clients: list[Client]):
     ]
 
     await asyncio.gather(*tasks)
+
+async def join_channels(tg_clients: list[Client]):
+    for session in tg_clients:
+        try:
+            async with session:
+                print(f"Bắt đầu tham gia các kênh cho session: {session.name}...")
+                print("JOIN: " + settings.CHANNEL_ONE + " " + settings.CHANNEL_TWO + " " + settings.CHANNEL_THREE)
+
+                channels = [settings.CHANNEL_ONE, settings.CHANNEL_TWO, settings.CHANNEL_THREE]
+
+                for channel in channels:
+                    if channel:
+                        try:
+                            result = await session.join_chat(channel)
+                            print(f"Đã tham gia vào kênh: {channel} - {result}")
+                            await asyncio.sleep(5)  # Thêm delay sau khi join
+                        except errors.FloodWait as e:
+                            print(f"Quá nhiều yêu cầu, hãy chờ {e.value} giây.")
+                            await asyncio.sleep(e.value)  # Chờ thời gian mà Telegram yêu cầu
+                        except errors.ChatAdminRequired:
+                            print("Cần quyền quản trị để tham gia kênh.")
+                        except errors.ChannelPrivate:
+                            print(f"{channel} là kênh riêng tư.")
+                        except Exception as e:
+                            print(f"Lỗi khi tham gia kênh {channel}: {e}")
+
+                        await asyncio.sleep(10)  # Delay giữa các yêu cầu tham gia
+        except Exception as e:
+            print(f"Đã xảy ra lỗi cho session {session.name}: {e}")

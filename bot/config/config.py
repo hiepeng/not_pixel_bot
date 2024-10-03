@@ -7,6 +7,10 @@ class Settings(BaseSettings):
     API_ID: int
     API_HASH: str
 
+    CHANNEL_ONE: str = ""
+    CHANNEL_TWO: str = ""
+    CHANNEL_THREE: str = ""
+    JOIN_CHANNEL: bool = False
 
     REF_LINK: str = "https://t.me/notpixel/app?startapp=f6624523270"
     X3POINTS: bool = True
